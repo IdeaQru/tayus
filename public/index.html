@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Cuaca</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1><i class="fas fa-cloud-sun"></i> Data Cuaca</h1>
+      <p class="subtitle">Pemantauan Cuaca Real-time</p>
+    </header>
+    
+    <div class="cards-container">
+      <div class="card">
+        <div class="card-icon">
+          <i class="fas fa-wind"></i>
+        </div>
+        <div class="card-content">
+          <h2>Kecepatan per Detik</h2>
+          <p id="kecepatan-detik" class="card-value">-</p>
+          <p class="card-unit">m/s</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">
+          <i class="fas fa-tachometer-alt"></i>
+        </div>
+        <div class="card-content">
+          <h2>Kecepatan per Jam</h2>
+          <p id="kecepatan-jam" class="card-value">-</p>
+          <p class="card-unit">km/h</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">
+          <i class="fas fa-compass"></i>
+        </div>
+        <div class="card-content">
+          <h2>Arah Angin</h2>
+          <p id="arah-angin" class="card-value">-</p>
+          <p class="card-unit">derajat</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">
+          <i class="fas fa-cloud-rain"></i>
+        </div>
+        <div class="card-content">
+          <h2>Curah Hujan</h2>
+          <p id="curah-hujan" class="card-value">-</p>
+          <p class="card-unit">mm</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-icon">
+          <i class="fas fa-clock"></i>
+        </div>
+        <div class="card-content">
+          <h2>Timestamp</h2>
+          <p id="timestamp" class="card-value">-</p>
+          <p class="card-unit">WIB</p>
+        </div>
+      </div>
+    </div>
+    
+    <footer>
+      <p>© 2025 Sistem Pemantauan Cuaca</p>
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
