@@ -2,7 +2,7 @@
 function updateWeatherData() {
     fetch('/api/weather')
       .then(response => {
-        if (!response.ok) throw new Error('Gagal mengambil data');
+        if (!response.ok) throw new Error('Gagal mengambil data');``
         return response.json();
       })
       .then(data => {
@@ -22,7 +22,9 @@ function updateWeatherData() {
         alert('Gagal memperbarui data cuaca');
       });
   }
-  
+  function openMaps() {
+  window.open('maps.html', '_blank');
+}
   // Jalankan update otomatis setiap 5 detik
   setInterval(updateWeatherData, 1000);
   updateWeatherData(); // Update pertama kali

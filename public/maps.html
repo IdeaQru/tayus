@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Peta AIS - Real Time Tracking</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="maps-style.css">
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <a href="index.html" class="back-button">
+        <i class="fas fa-arrow-left"></i> Kembali
+      </a>
+      <h1><i class="fas fa-satellite-dish"></i> AIS Live Tracking</h1>
+    </div>
+    
+    <div class="controls">
+      <div class="status-indicator">
+        <span class="status-dot" id="connection-status"></span>
+        <span id="status-text">Connecting...</span>
+      </div>
+      <button class="filter-btn active" onclick="toggleFilter('vessels')" id="vessels-btn">
+        <i class="fas fa-ship"></i> Vessels (<span id="vessel-count">0</span>)
+      </button>
+      <button class="filter-btn active" onclick="toggleFilter('buoys')" id="buoys-btn">
+        <i class="fas fa-anchor"></i> Buoys (<span id="buoy-count">0</span>)
+      </button>
+      <button class="filter-btn" onclick="toggleFilter('tracks')" id="tracks-btn">
+        <i class="fas fa-route"></i> Tracks
+      </button>
+      <button class="refresh-btn" onclick="refreshData()">
+        <i class="fas fa-sync-alt"></i> Refresh
+      </button>
+      <button class="legend-btn" onclick="openLegend()">
+        <i class="fas fa-map-signs"></i> Legend
+      </button>
+    </div>
+  </div>
+
+  <div id="map"></div>
+
+  <!-- Info Panel -->
+  <div class="info-panel" id="info-panel">
+    <div class="info-header">
+      <h3><i class="fas fa-info-circle"></i> AIS Information</h3>
+      <button class="close-btn" onclick="PopupManager.closeInfoPanel()">×</button>
+    </div>
+    <div class="info-content" id="info-content">
+      <div class="empty-state">
+        <i class="fas fa-mouse-pointer"></i>
+        <p>Click on a vessel or buoy to view details</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Legend -->
+  <div class="legend">
+    <div class="legend-header">
+      <h4><i class="fas fa-map"></i> Quick Legend</h4>
+      <button class="legend-detail-btn" onclick="openLegend()">
+        <i class="fas fa-external-link-alt"></i> Detail
+      </button>
+    </div>
+    
+    <div class="legend-section">
+      <h5><i class="fas fa-ship"></i> Vessels</h5>
+      <div class="legend-item">
+        <img src="assets/marker/ships.png" class="legend-icon" alt="Ship">
+        <span>All Ships & Boats</span>
+      </div>
+      <div class="legend-note">
+        <small><i class="fas fa-info"></i> Icon rotates based on heading</small>
+      </div>
+    </div>
+    
+    <div class="legend-section">
+      <h5><i class="fas fa-anchor"></i> ATON Buoys</h5>
+      <div class="legend-grid">
+        <div class="legend-item">
+          <img src="assets/marker/north-cardinal.png" class="legend-icon-small" alt="Cardinal">
+          <span>Cardinal</span>
+        </div>
+        <div class="legend-item">
+          <img src="assets/marker/porthand.png" class="legend-icon-small" alt="Port">
+          <span>Port Hand</span>
+        </div>
+        <div class="legend-item">
+          <img src="assets/marker/starboard-hand.png" class="legend-icon-small" alt="Starboard">
+          <span>Starboard</span>
+        </div>
+        <div class="legend-item">
+          <img src="assets/marker/safe-water.png" class="legend-icon-small" alt="Safe Water">
+          <span>Safe Water</span>
+        </div>
+        <div class="legend-item">
+          <img src="assets/marker/special-mark.png" class="legend-icon-small" alt="Special">
+          <span>Special</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-more">+more...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loading-overlay">
+    <div class="loading-spinner">
+      <i class="fas fa-satellite-dish fa-spin"></i>
+      <p>Connecting to AIS Data...</p>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="api.js"></script>
+  <script src="popup.js"></script>
+  <script src="markers.js"></script>
+  <script src="maps.js"></script>
+
+  <script>
+    // Fungsi untuk membuka halaman legend detail
+    function openLegend() {
+      window.open('legend.html', '_blank');
+    }
+
+    // Show loading overlay initially
+    document.addEventListener('DOMContentLoaded', function() {
+      const overlay = document.getElementById('loading-overlay');
+      if (overlay) {
+        setTimeout(() => {
+          overlay.style.display = 'none';
+        }, 2000);
+      }
+    });
+  </script>
+</body>
+</html>
