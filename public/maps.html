@@ -3,55 +3,129 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Peta AIS - Real Time Tracking</title>
+  <title>AIS Live Tracking - Real Time Maritime Monitoring</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
   <link rel="stylesheet" href="maps-style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+  <!-- Header Section -->
   <div class="header">
     <div class="header-left">
       <a href="index.html" class="back-button">
-        <i class="fas fa-arrow-left"></i> Kembali
+        <i class="fas fa-arrow-left"></i>
+        <span>Kembali</span>
       </a>
-      <h1><i class="fas fa-satellite-dish"></i> AIS Live Tracking</h1>
+      <div class="header-title">
+        <h1><i class="fas fa-satellite-dish"></i> AIS Live Tracking</h1>
+        <p class="subtitle">Real-time Maritime Traffic Monitoring</p>
+      </div>
     </div>
     
     <div class="controls">
       <div class="status-indicator">
         <span class="status-dot" id="connection-status"></span>
         <span id="status-text">Connecting...</span>
+        <div class="status-details" id="status-details">
+          <small>Last update: <span id="last-update">--</span></small>
+        </div>
       </div>
-      <button class="filter-btn active" onclick="toggleFilter('vessels')" id="vessels-btn">
-        <i class="fas fa-ship"></i> Vessels (<span id="vessel-count">0</span>)
-      </button>
-      <button class="filter-btn active" onclick="toggleFilter('buoys')" id="buoys-btn">
-        <i class="fas fa-anchor"></i> Buoys (<span id="buoy-count">0</span>)
-      </button>
-      <button class="filter-btn" onclick="toggleFilter('tracks')" id="tracks-btn">
-        <i class="fas fa-route"></i> Tracks
-      </button>
-      <button class="refresh-btn" onclick="refreshData()">
-        <i class="fas fa-sync-alt"></i> Refresh
-      </button>
-      <button class="legend-btn" onclick="openLegend()">
-        <i class="fas fa-map-signs"></i> Legend
-      </button>
+      
+      <div class="filter-controls">
+        <button class="filter-btn active" onclick="toggleFilter('vessels')" id="vessels-btn">
+          <i class="fas fa-ship"></i>
+          <span class="btn-text">Vessels</span>
+          <span class="count-badge" id="vessel-count">0</span>
+        </button>
+        <button class="filter-btn active" onclick="toggleFilter('buoys')" id="buoys-btn">
+          <i class="fas fa-anchor"></i>
+          <span class="btn-text">ATON</span>
+          <span class="count-badge" id="buoy-count">0</span>
+        </button>
+        <!-- <button class="filter-btn" onclick="toggleFilter('tracks')" id="tracks-btn">
+          <i class="fas fa-route"></i>
+          <span class="btn-text">Tracks</span>
+        </button>
+        <button class="filter-btn" onclick="toggleFilter('weather')" id="weather-btn">
+          <i class="fas fa-cloud-sun"></i>
+          <span class="btn-text">Weather</span>
+        </button> -->
+      </div>
+      
+      <div class="action-controls">
+        <button class="action-btn" onclick="searchByArea()" title="Search Current Area">
+          <i class="fas fa-search"></i>
+        </button>
+        <button class="action-btn" onclick="refreshData()" title="Refresh Data">
+          <i class="fas fa-sync-alt"></i>
+        </button>
+        <button class="action-btn" onclick="openLegend()" title="Show Legend">
+          <i class="fas fa-map-signs"></i>
+        </button>
+        <button class="action-btn" onclick="toggleFullscreen()" title="Toggle Fullscreen">
+          <i class="fas fa-expand"></i>
+        </button>
+      </div>
     </div>
   </div>
 
-  <div id="map"></div>
+  <!-- Map Container -->
+  <div id="map" class="map-container"></div>
 
   <!-- Info Panel -->
   <div class="info-panel" id="info-panel">
     <div class="info-header">
       <h3><i class="fas fa-info-circle"></i> AIS Information</h3>
-      <button class="close-btn" onclick="PopupManager.closeInfoPanel()">×</button>
+      <div class="info-actions">
+        <button class="info-action-btn" onclick="trackVessel()" title="Track This Vessel">
+          <i class="fas fa-crosshairs"></i>
+        </button>
+        <button class="info-action-btn" onclick="showHistory()" title="Show History">
+          <i class="fas fa-history"></i>
+        </button>
+        <button class="close-btn" onclick="closeInfoPanel()">×</button>
+      </div>
     </div>
     <div class="info-content" id="info-content">
       <div class="empty-state">
         <i class="fas fa-mouse-pointer"></i>
-        <p>Click on a vessel or buoy to view details</p>
+        <p>Click on a vessel or ATON to view details</p>
+        <small>Real-time data from AIS server</small>
+      </div>
+    </div>
+  </div>
+
+  <!-- Weather Panel -->
+  <div class="weather-panel" id="weather-panel">
+    <div class="weather-header">
+      <h4><i class="fas fa-cloud-sun"></i> Weather Data</h4>
+      <button class="weather-toggle" onclick="toggleWeatherPanel()">
+        <i class="fas fa-chevron-up"></i>
+      </button>
+    </div>
+    <div class="weather-content" id="weather-info">
+      <div class="weather-loading">
+        <i class="fas fa-spinner fa-spin"></i>
+        <span>Loading weather data...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Statistics Panel -->
+  <div class="stats-panel" id="stats-panel">
+    <div class="stats-header">
+      <h4><i class="fas fa-chart-bar"></i> Statistics</h4>
+      <button class="stats-toggle" onclick="toggleStatsPanel()">
+        <i class="fas fa-chevron-down"></i>
+      </button>
+    </div>
+    <div class="stats-content" id="ais-statistics">
+      <div class="stats-loading">
+        <i class="fas fa-spinner fa-spin"></i>
+        <span>Loading statistics...</span>
       </div>
     </div>
   </div>
@@ -61,7 +135,7 @@
     <div class="legend-header">
       <h4><i class="fas fa-map"></i> Quick Legend</h4>
       <button class="legend-detail-btn" onclick="openLegend()">
-        <i class="fas fa-external-link-alt"></i> Detail
+        <i class="fas fa-external-link-alt"></i>
       </button>
     </div>
     
@@ -84,7 +158,7 @@
           <span>Cardinal</span>
         </div>
         <div class="legend-item">
-          <img src="assets/marker/porthand.png" class="legend-icon-small" alt="Port">
+          <img src="assets/marker/portland.png" class="legend-icon-small" alt="Port">
           <span>Port Hand</span>
         </div>
         <div class="legend-item">
@@ -100,7 +174,7 @@
           <span>Special</span>
         </div>
         <div class="legend-item">
-          <span class="legend-more">+more...</span>
+          <span class="legend-more" onclick="openLegend()">+26 more...</span>
         </div>
       </div>
     </div>
@@ -109,31 +183,153 @@
   <!-- Loading Overlay -->
   <div class="loading-overlay" id="loading-overlay">
     <div class="loading-spinner">
-      <i class="fas fa-satellite-dish fa-spin"></i>
-      <p>Connecting to AIS Data...</p>
+      <div class="spinner-container">
+        <i class="fas fa-satellite-dish fa-spin"></i>
+        <div class="loading-dots">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+      <h3>Connecting to AIS Server</h3>
+      <p>Initializing real-time maritime data...</p>
+      <div class="loading-progress">
+        <div class="progress-bar" id="loading-progress"></div>
+      </div>
     </div>
   </div>
 
+  <!-- Notification Toast -->
+  <div class="toast-container" id="toast-container"></div>
+
   <!-- Scripts -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="api.js"></script>
-  <script src="popup.js"></script>
-  <script src="markers.js"></script>
   <script src="maps.js"></script>
+  <script src="markers.js"></script>
 
   <script>
-    // Fungsi untuk membuka halaman legend detail
+    // Global functions for HTML interactions
     function openLegend() {
-      window.open('legend.html', '_blank');
+      window.open('legend.html', '_blank', 'width=800,height=600');
     }
 
-    // Show loading overlay initially
+    function closeInfoPanel() {
+      const panel = document.getElementById('info-panel');
+      if (panel) {
+        panel.classList.remove('active');
+      }
+    }
+
+    function toggleWeatherPanel() {
+      const panel = document.getElementById('weather-panel');
+      const toggle = document.querySelector('.weather-toggle i');
+      if (panel.classList.contains('collapsed')) {
+        panel.classList.remove('collapsed');
+        toggle.className = 'fas fa-chevron-up';
+      } else {
+        panel.classList.add('collapsed');
+        toggle.className = 'fas fa-chevron-down';
+      }
+    }
+
+    function toggleStatsPanel() {
+      const panel = document.getElementById('stats-panel');
+      const toggle = document.querySelector('.stats-toggle i');
+      if (panel.classList.contains('collapsed')) {
+        panel.classList.remove('collapsed');
+        toggle.className = 'fas fa-chevron-down';
+      } else {
+        panel.classList.add('collapsed');
+        toggle.className = 'fas fa-chevron-up';
+      }
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
+    function trackVessel() {
+      // Implementation for vessel tracking
+      console.log('Track vessel functionality');
+    }
+
+    function showHistory() {
+      // Implementation for showing vessel history
+      console.log('Show history functionality');
+    }
+
+    // Loading overlay management
     document.addEventListener('DOMContentLoaded', function() {
       const overlay = document.getElementById('loading-overlay');
-      if (overlay) {
-        setTimeout(() => {
-          overlay.style.display = 'none';
-        }, 2000);
+      const progressBar = document.getElementById('loading-progress');
+      
+      if (overlay && progressBar) {
+        // Simulate loading progress
+        let progress = 0;
+        const interval = setInterval(() => {
+          progress += Math.random() * 30;
+          if (progress >= 100) {
+            progress = 100;
+            clearInterval(interval);
+            setTimeout(() => {
+              overlay.style.opacity = '0';
+              setTimeout(() => {
+                overlay.style.display = 'none';
+              }, 300);
+            }, 500);
+          }
+          progressBar.style.width = progress + '%';
+        }, 200);
+      }
+    });
+
+    // Toast notification system
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      
+      const icon = type === 'success' ? 'check-circle' : 
+                   type === 'error' ? 'exclamation-circle' : 
+                   type === 'warning' ? 'exclamation-triangle' : 'info-circle';
+      
+      toast.innerHTML = `
+        <i class="fas fa-${icon}"></i>
+        <span>${message}</span>
+        <button onclick="this.parentElement.remove()">×</button>
+      `;
+      
+      container.appendChild(toast);
+      
+      // Auto remove after 5 seconds
+      setTimeout(() => {
+        if (toast.parentElement) {
+          toast.remove();
+        }
+      }, 5000);
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+      if (e.ctrlKey || e.metaKey) {
+        switch(e.key) {
+          case 'r':
+            e.preventDefault();
+            refreshData();
+            break;
+          case 'f':
+            e.preventDefault();
+            toggleFullscreen();
+            break;
+          case 'l':
+            e.preventDefault();
+            openLegend();
+            break;
+        }
       }
     });
   </script>

@@ -1,25 +1,58 @@
-// maps.js - Core map functionality dan orchestration
+// maps.js - Core map functionality dengan MarkerManager integration
 
-// Variabel global untuk peta
-let map, vesselsLayer, buoysLayer, tracksLayer;
-let aisData = [];
+// ===== GLOBAL VARIABLES =====
+let map, vesselsLayer, buoysLayer, tracksLayer, weatherLayer;
 let allProcessedData = new Map();
+let connectionStatus = 'disconnected';
+let refreshInterval = null;
+let weatherData = null;
 
-// Konfigurasi asset marker lokal
+// ===== API CONFIGURATION =====
+const API_CONFIG = {
+  baseURL: 'http://localhost:3333/api',
+  endpoints: {
+    ships: '/ships',
+    aids: '/aids',
+    weather: '/weather',
+    weatherHistory: '/weather/history',
+    aisStatus: '/ais/status',
+    aisStatistics: '/ais/statistics',
+    allData: '/all',
+    health: '/health'
+  },
+  refreshInterval: 30000, // 30 seconds
+  timeout: 10000 // 10 seconds
+};
+
+// ===== MARKER ASSETS CONFIGURATION =====
 const MARKER_ASSETS = {
   basePath: './assets/marker/',
   vessel: 'ships.png',
   aton: {
+    // Cardinal Marks
     1: 'north-cardinal.png',     // North Cardinal
-    2: 'east-cardinal.png',      // East Cardinal
+    2: 'east-cardinal.png',      // East Cardinal  
     3: 'south-cardinal.png',     // South Cardinal
     4: 'west-cardinal.png',      // West Cardinal
-    5: 'porthand.png',           // Port Hand
+    21: 'north-cardinal.png',    // North Cardinal with Topmark
+    22: 'east-cardinal.png',     // East Cardinal with Topmark
+    23: 'south-cardinal.png',    // South Cardinal with Topmark
+    24: 'west-cardinal.png',     // West Cardinal with Topmark
+    
+    // Lateral Marks
+    5: 'portland.png',           // Port Hand
+    7: 'portland.png',           // Preferred Channel Port
+    25: 'portland.png',          // Port Lateral with Topmark
     6: 'starboard-hand.png',     // Starboard Hand
-    7: 'porthand.png',           // Preferred Channel Port
     8: 'starboard-hand.png',     // Preferred Channel Starboard
-    9: 'special-mark.png',       // Isolated Danger
+    26: 'starboard-hand.png',    // Starboard Lateral with Topmark
+    
+    // Safe Water Marks
     10: 'safe-water.png',        // Safe Water
+    28: 'safe-water.png',        // Safe Water with Topmark
+    
+    // Special Marks
+    9: 'special-mark.png',       // Isolated Danger
     11: 'special-mark.png',      // Special Mark
     12: 'special-mark.png',      // Light Vessel
     13: 'special-mark.png',      // LANBY
@@ -29,28 +62,133 @@ const MARKER_ASSETS = {
     17: 'special-mark.png',      // Emergency Wreck
     18: 'special-mark.png',      // Offshore Platform
     19: 'special-mark.png',      // Drilling Rig
-    20: 'special-mark.png',      // Virtual ATON
-    21: 'north-cardinal.png',    // North Cardinal with Topmark
-    22: 'east-cardinal.png',     // East Cardinal with Topmark
-    23: 'south-cardinal.png',    // South Cardinal with Topmark
-    24: 'west-cardinal.png',     // West Cardinal with Topmark
-    25: 'porthand.png',          // Port Lateral with Topmark
-    26: 'starboard-hand.png',    // Starboard Lateral with Topmark
     27: 'special-mark.png',      // Isolated Danger with Topmark
-    28: 'safe-water.png',        // Safe Water with Topmark
     29: 'special-mark.png',      // Special Purpose with Topmark
     30: 'special-mark.png',      // Wreck Marking
     31: 'special-mark.png',      // Obstruction Marking
+    
+    // Virtual ATON
+    20: 'virtual_buoy.png',      // Virtual ATON
+    
+    // Default/Unknown
     0: 'special-mark.png'        // Unknown ATON
   }
 };
 
-// Inisialisasi peta
+// ===== API CLIENT CLASS =====
+class AISAPIClient {
+  constructor(config) {
+    this.config = config;
+    this.abortController = null;
+  }
+
+  async makeRequest(endpoint, options = {}) {
+    try {
+      if (this.abortController) {
+        this.abortController.abort();
+      }
+      
+      this.abortController = new AbortController();
+      
+      const url = `${this.config.baseURL}${endpoint}`;
+      const requestOptions = {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        signal: this.abortController.signal,
+        timeout: this.config.timeout,
+        ...options
+      };
+
+      console.log(`🌐 Making API request to: ${url}`);
+      
+      const response = await fetch(url, requestOptions);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      console.log(`✅ API response received from ${endpoint}`);
+      
+      return data;
+      
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        console.log('🔄 Request aborted');
+        return null;
+      }
+      
+      console.error(`❌ API request failed for ${endpoint}:`, error);
+      throw error;
+    }
+  }
+
+  async getAllData(page = 1, limit = 100) {
+    return await this.makeRequest(`${this.config.endpoints.allData}?page=${page}&limit=${limit}`);
+  }
+
+  async getShips(page = 1, limit = 100) {
+    return await this.makeRequest(`${this.config.endpoints.ships}?page=${page}&limit=${limit}`);
+  }
+
+  async getAids(page = 1, limit = 100) {
+    return await this.makeRequest(`${this.config.endpoints.aids}?page=${page}&limit=${limit}`);
+  }
+
+  async getShipsByArea(bounds) {
+    return await this.makeRequest(this.config.endpoints.ships + '/area', {
+      method: 'POST',
+      body: JSON.stringify({ bounds })
+    });
+  }
+
+  async getAidsByArea(bounds) {
+    return await this.makeRequest(this.config.endpoints.aids + '/area', {
+      method: 'POST',
+      body: JSON.stringify({ bounds })
+    });
+  }
+
+  async getAllDataByArea(bounds) {
+    return await this.makeRequest(this.config.endpoints.allData + '/area', {
+      method: 'POST',
+      body: JSON.stringify({ bounds })
+    });
+  }
+
+  async getWeatherData() {
+    return await this.makeRequest(this.config.endpoints.weather);
+  }
+
+  async getWeatherHistory(page = 1, limit = 50) {
+    return await this.makeRequest(`${this.config.endpoints.weatherHistory}?page=${page}&limit=${limit}`);
+  }
+
+  async getAISStatus() {
+    return await this.makeRequest(this.config.endpoints.aisStatus);
+  }
+
+  async getAISStatistics() {
+    return await this.makeRequest(this.config.endpoints.aisStatistics);
+  }
+
+  async getHealthStatus() {
+    return await this.makeRequest(this.config.endpoints.health);
+  }
+}
+
+// ===== INITIALIZE API CLIENT =====
+const apiClient = new AISAPIClient(API_CONFIG);
+
+// ===== MAP INITIALIZATION =====
 async function initMap() {
   try {
-    console.log('🗺️ Initializing map with local assets...');
+    console.log('🗺️ Initializing map with AIS Server API...');
     
-    // Setup peta
+    // Setup map
     map = L.map('map').setView([-6.1754, 106.8272], 6);
 
     // Base layers
@@ -62,38 +200,53 @@ async function initMap() {
       attribution: '© Esri'
     });
 
+    const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© CartoDB'
+    });
+
     osmLayer.addTo(map);
 
     // Layer groups
     vesselsLayer = L.layerGroup().addTo(map);
     buoysLayer = L.layerGroup().addTo(map);
     tracksLayer = L.layerGroup();
+    weatherLayer = L.layerGroup();
 
     // Layer control
     const baseMaps = {
       "OpenStreetMap": osmLayer,
-      "Satellite": satelliteLayer
+      "Satellite": satelliteLayer,
+      "Dark": darkLayer
     };
 
-    L.control.layers(baseMaps).addTo(map);
+    const overlayMaps = {
+      "Vessels": vesselsLayer,
+      "Aids to Navigation": buoysLayer,
+      "Tracks": tracksLayer,
+      "Weather": weatherLayer
+    };
+
+    L.control.layers(baseMaps, overlayMaps).addTo(map);
     
-    // Setup SSE callbacks
-    window.aisDataAPI.setDataCallback(handleIncomingData);
-    window.aisDataAPI.setStatusCallback(updateConnectionStatus);
+    // Test API connection
+    console.log('🔄 Testing API connection...');
+    const healthStatus = await testAPIConnection();
     
-    // Test SSE connection dan start
-    console.log('🔄 Testing SSE connection...');
-    const connectionOk = await window.aisDataAPI.testSSEConnection();
-    
-    if (connectionOk) {
-      console.log('✅ SSE connection test successful, starting real-time stream...');
-      window.aisDataAPI.startSSEConnection();
-      window.aisDataAPI.startDataCleaning();
+    if (healthStatus) {
+      console.log('✅ API connection successful, starting data fetch...');
+      updateConnectionStatus('connected');
       
-      // Fetch initial data dari semua pagination
-      await fetchAllPaginationData();
+      // Initial data fetch
+      await fetchAllData();
+      
+      // Start auto-refresh
+      startAutoRefresh();
+      
+      // Fetch weather data
+      await fetchWeatherData();
+      
     } else {
-      console.log('❌ SSE connection failed');
+      console.log('❌ API connection failed');
       updateConnectionStatus('error');
     }
     
@@ -103,29 +256,55 @@ async function initMap() {
   }
 }
 
-// Fetch semua data dari pagination API
-async function fetchAllPaginationData() {
+// ===== API CONNECTION TEST =====
+async function testAPIConnection() {
   try {
-    console.log('📄 Fetching all pagination data...');
+    updateConnectionStatus('connecting');
+    
+    const healthStatus = await apiClient.getHealthStatus();
+    
+    if (healthStatus && healthStatus.status === 'healthy') {
+      console.log('✅ API Health Check passed:', healthStatus);
+      return true;
+    } else {
+      console.log('❌ API Health Check failed:', healthStatus);
+      return false;
+    }
+    
+  } catch (error) {
+    console.error('❌ API connection test failed:', error);
+    return false;
+  }
+}
+
+// ===== DATA FETCHING =====
+async function fetchAllData() {
+  try {
+    console.log('📄 Fetching all AIS data...');
     updateConnectionStatus('connecting');
     
     let currentPage = 1;
     let hasMorePages = true;
     let totalFetched = 0;
     
+    // Clear existing data
+    allProcessedData.clear();
+    MarkerManager.clearAllMarkers();
+    
     while (hasMorePages && currentPage <= 10) {
       try {
         console.log(`📄 Fetching page ${currentPage}...`);
         
-        const pageData = await fetchPageData(currentPage);
+        const pageData = await apiClient.getAllData(currentPage, 100);
         
         if (pageData && pageData.data && pageData.data.length > 0) {
           processPageData(pageData.data);
           totalFetched += pageData.data.length;
           
-          if (pageData.pagination && pageData.pagination.hasNext) {
+          // Check if there are more pages
+          if (pageData.totalPages && currentPage < pageData.totalPages) {
             currentPage++;
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise(resolve => setTimeout(resolve, 100)); // Small delay
           } else {
             hasMorePages = false;
           }
@@ -139,49 +318,28 @@ async function fetchAllPaginationData() {
       }
     }
     
-    console.log(`✅ Total fetched from pagination: ${totalFetched} records`);
+    console.log(`✅ Total fetched: ${totalFetched} records`);
     updateMapWithAllData();
     updateConnectionStatus('connected');
     
+    // Update last update time
+    updateLastUpdateTime();
+    
+    // Fetch statistics
+    await fetchAISStatistics();
+    
   } catch (error) {
-    console.error('❌ Error fetching pagination data:', error);
+    console.error('❌ Error fetching all data:', error);
     updateConnectionStatus('error');
   }
 }
 
-// Fetch data dari halaman tertentu
-async function fetchPageData(page) {
-  try {
-    const url = new URL('http://165.154.228.42:3045/api/v2/realtime');
-    url.searchParams.append('page', page);
-    url.searchParams.append('limit', 500);
-    
-    const response = await fetch(url.toString(), {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      }
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    
-    return await response.json();
-    
-  } catch (error) {
-    console.error(`❌ Error fetching page ${page}:`, error);
-    return null;
-  }
-}
-
-// Process data dari halaman
+// ===== PROCESS PAGE DATA =====
 function processPageData(pageData) {
   if (!Array.isArray(pageData)) return;
   
   pageData.forEach(item => {
-    if (!item || !item.mmsi) return;
+    if (!item || !item.MMSI) return;
     
     const processedItem = processAISItem(item);
     if (processedItem) {
@@ -190,29 +348,27 @@ function processPageData(pageData) {
   });
 }
 
-// Process single AIS item
+// ===== PROCESS AIS ITEM =====
 function processAISItem(item) {
   try {
     if (!hasValidPosition(item)) {
-      console.log(`⚠️ Invalid position for MMSI ${item.mmsi}`);
       return null;
     }
     
     const processedItem = {
-      mmsi: item.mmsi,
-      timestamp: item.timestamp || item.created_at || item.Timestamp || new Date().toISOString(),
+      mmsi: item.MMSI,
+      timestamp: item.Timestamp || new Date().toISOString(),
       position: extractPosition(item),
       movement: extractMovement(item),
       static: extractStaticData(item),
-      dataAgeMinutes: calculateDataAge(item.timestamp || item.created_at || item.Timestamp),
-      messageType: parseInt(item.msgtype || item.aistype || item.message_type || 0),
-      aisType: parseInt(item.aistype || item.msgtype || item.message_type || 0),
+      dataAgeMinutes: calculateDataAge(item.Timestamp),
+      messageType: parseInt(item.MessageType || 0),
       rawData: item,
       lastUpdate: new Date()
     };
     
-    // Klasifikasi berdasarkan AIS Message Type
-    if (processedItem.messageType === 21 || processedItem.aisType === 21) {
+    // Classify based on Message Type
+    if (processedItem.messageType === 21) {
       // Message Type 21 = Aid to Navigation Report
       const atonData = classifyATON(item);
       return {
@@ -222,59 +378,31 @@ function processAISItem(item) {
         atonType: atonData.type,
         atonName: atonData.name,
         atonCategory: atonData.category,
-        atonColor: atonData.color,
-        atonSymbol: atonData.symbol,
+        markerImage: item.MarkerImage || MARKER_ASSETS.aton[atonData.type] || MARKER_ASSETS.aton[0],
         atonDetails: extractATONDetails(item)
       };
     } else {
-      // Semua yang bukan ATON adalah vessel
+      // All non-ATON are vessels
       return {
         ...processedItem,
         objectType: 'vessel',
-        isVessel: true
+        isVessel: true,
+        markerImage: item.MarkerImage || MARKER_ASSETS.vessel
       };
     }
     
   } catch (error) {
-    console.error(`❌ Error processing AIS item:`, error, item);
+    console.error(`❌ Error processing AIS item:`, error);
     return null;
   }
 }
 
-// Handle incoming SSE data
-function handleIncomingData(data) {
-  try {
-    console.log('📨 Handling incoming SSE data:', data);
-    
-    if (data.vessels && Array.isArray(data.vessels)) {
-      data.vessels.forEach(vessel => {
-        if (vessel.mmsi) {
-          allProcessedData.set(vessel.mmsi, vessel);
-        }
-      });
-    }
-    
-    if (data.buoys && Array.isArray(data.buoys)) {
-      data.buoys.forEach(buoy => {
-        if (buoy.mmsi) {
-          allProcessedData.set(buoy.mmsi, buoy);
-        }
-      });
-    }
-    
-    updateMapWithAllData();
-    
-  } catch (error) {
-    console.error('❌ Error handling incoming data:', error);
-  }
-}
-
-// Update map dengan semua data
+// ===== UPDATE MAP WITH ALL DATA =====
 function updateMapWithAllData() {
   try {
     console.log(`🗺️ Updating map with ${allProcessedData.size} total records`);
     
-    // Clear existing layers menggunakan MarkerManager
+    // Clear existing layers using MarkerManager
     MarkerManager.clearAllMarkers();
     
     let vesselCount = 0;
@@ -294,7 +422,6 @@ function updateMapWithAllData() {
         
         if (!isValidCoordinate(lat, lng)) {
           invalidCoordinates++;
-          console.log(`❌ Invalid coordinate for ${mmsi}: ${lat}, ${lng}`);
           return;
         }
         
@@ -324,71 +451,151 @@ function updateMapWithAllData() {
       totalProcessed: allProcessedData.size
     });
     
-    // Force layer visibility
-    if (vesselCount > 0 && !map.hasLayer(vesselsLayer)) {
-      map.addLayer(vesselsLayer);
-      const vesselBtn = document.getElementById('vessels-btn');
-      if (vesselBtn) vesselBtn.classList.add('active');
-    }
-
-    if (buoyCount > 0 && !map.hasLayer(buoysLayer)) {
-      map.addLayer(buoysLayer);
-      const buoyBtn = document.getElementById('buoys-btn');
-      if (buoyBtn) buoyBtn.classList.add('active');
-    }
-
-    // Auto-zoom ke data setelah 500ms
+    // Auto-zoom to data
     setTimeout(() => {
-      autoZoomToData();
+      // autoZoomToData();
     }, 500);
+    
+    // Cleanup old markers
+    MarkerManager.cleanupOldMarkers();
     
   } catch (error) {
     console.error('❌ Error updating map:', error);
   }
 }
 
-// Auto-zoom ke data
-function autoZoomToData() {
+// ===== WEATHER DATA FUNCTIONS =====
+async function fetchWeatherData() {
   try {
-    const bounds = L.latLngBounds();
-    let hasValidBounds = false;
+    console.log('🌤️ Fetching weather data...');
     
-    // Cek semua marker di vessels layer
-    vesselsLayer.eachLayer(function(marker) {
-      const latLng = marker.getLatLng();
-      if (latLng) {
-        bounds.extend(latLng);
-        hasValidBounds = true;
-      }
-    });
+    const weather = await apiClient.getWeatherData();
     
-    // Cek semua marker di buoys layer
-    buoysLayer.eachLayer(function(marker) {
-      const latLng = marker.getLatLng();
-      if (latLng) {
-        bounds.extend(latLng);
-        hasValidBounds = true;
-      }
-    });
-    
-    if (hasValidBounds) {
-      console.log('🗺️ Auto-zooming to marker bounds');
-      map.fitBounds(bounds, { 
-        padding: [50, 50],
-        maxZoom: 12
-      });
-    } else {
-      console.log('🗺️ No markers found, zooming to Indonesia');
-      map.setView([-6.2, 106.8], 8);
+    if (weather) {
+      weatherData = weather;
+      updateWeatherDisplay(weather);
+      console.log('✅ Weather data updated:', weather);
     }
     
   } catch (error) {
-    console.error('❌ Error auto-zooming:', error);
-    map.setView([-6.2, 106.8], 8);
+    console.error('❌ Error fetching weather data:', error);
   }
 }
 
-// Helper functions
+function updateWeatherDisplay(weather) {
+  try {
+    const weatherContainer = document.getElementById('weather-info');
+    if (!weatherContainer) return;
+    
+    weatherContainer.innerHTML = `
+      <div class="weather-data">
+        <div class="weather-item">
+          <span class="weather-label">
+            <i class="fas fa-wind"></i> Wind Speed:
+          </span>
+          <span class="weather-value">${weather.kecepatan_jam} km/h</span>
+        </div>
+        <div class="weather-item">
+          <span class="weather-label">
+            <i class="fas fa-compass"></i> Wind Direction:
+          </span>
+          <span class="weather-value">${weather.arah_angin}</span>
+        </div>
+        <div class="weather-item">
+          <span class="weather-label">
+            <i class="fas fa-cloud-rain"></i> Rainfall:
+          </span>
+          <span class="weather-value">${weather.curah_hujan} mm</span>
+        </div>
+        <div class="weather-timestamp">
+          <i class="fas fa-clock"></i> Updated: ${new Date(weather.timestamp).toLocaleString()}
+        </div>
+      </div>
+    `;
+    
+  } catch (error) {
+    console.error('❌ Error updating weather display:', error);
+  }
+}
+
+// ===== AIS STATISTICS =====
+async function fetchAISStatistics() {
+  try {
+    const stats = await apiClient.getAISStatistics();
+    
+    if (stats) {
+      updateStatisticsDisplay(stats);
+      console.log('📊 AIS Statistics updated:', stats);
+    }
+    
+  } catch (error) {
+    console.error('❌ Error fetching AIS statistics:', error);
+  }
+}
+
+function updateStatisticsDisplay(stats) {
+  try {
+    const statsContainer = document.getElementById('ais-statistics');
+    if (!statsContainer) return;
+    
+    statsContainer.innerHTML = `
+      <div class="stats-data">
+        <div class="stats-item">
+          <span class="stats-label">
+            <i class="fas fa-ship"></i> Total Ships:
+          </span>
+          <span class="stats-value">${stats.totalShips}</span>
+        </div>
+        <div class="stats-item">
+          <span class="stats-label">
+            <i class="fas fa-anchor"></i> Total Aids:
+          </span>
+          <span class="stats-value">${stats.totalAids}</span>
+        </div>
+        <div class="stats-item">
+          <span class="stats-label">
+            <i class="fas fa-broadcast-tower"></i> Message Types:
+          </span>
+          <span class="stats-value">${Object.keys(stats.messageTypes || {}).length}</span>
+        </div>
+        <div class="stats-item">
+          <span class="stats-label">
+            <i class="fas fa-database"></i> Decoder Sources:
+          </span>
+          <span class="stats-value">${Object.keys(stats.decoderSources || {}).length}</span>
+        </div>
+      </div>
+    `;
+    
+  } catch (error) {
+    console.error('❌ Error updating statistics display:', error);
+  }
+}
+
+// ===== AUTO REFRESH =====
+function startAutoRefresh() {
+  if (refreshInterval) {
+    clearInterval(refreshInterval);
+  }
+  
+  refreshInterval = setInterval(async () => {
+    console.log('🔄 Auto-refreshing data...');
+    await fetchAllData();
+    await fetchWeatherData();
+  }, API_CONFIG.refreshInterval);
+  
+  console.log(`🔄 Auto-refresh started (${API_CONFIG.refreshInterval / 1000}s interval)`);
+}
+
+function stopAutoRefresh() {
+  if (refreshInterval) {
+    clearInterval(refreshInterval);
+    refreshInterval = null;
+    console.log('⏹️ Auto-refresh stopped');
+  }
+}
+
+// ===== HELPER FUNCTIONS =====
 function isValidCoordinate(lat, lng) {
   if (isNaN(lat) || isNaN(lng)) return false;
   if (lat < -90 || lat > 90) return false;
@@ -398,33 +605,25 @@ function isValidCoordinate(lat, lng) {
 }
 
 function hasValidPosition(item) {
-  if (item.position && item.position.latitude && item.position.longitude) return true;
-  if (item.loc && item.loc.coordinates && item.loc.coordinates.length >= 2) return true;
   if (item.coordinates && item.coordinates.coordinates && item.coordinates.coordinates.length >= 2) return true;
+  if (item.position && item.position.latitude && item.position.longitude) return true;
   if (item.latitude && item.longitude) return true;
   if (item.lat && item.lng) return true;
   return false;
 }
 
 function extractPosition(item) {
-  if (item.position && item.position.latitude && item.position.longitude) {
-    return {
-      latitude: parseFloat(item.position.latitude),
-      longitude: parseFloat(item.position.longitude)
-    };
-  }
-  
-  if (item.loc && item.loc.coordinates && item.loc.coordinates.length >= 2) {
-    return {
-      latitude: parseFloat(item.loc.coordinates[1]),
-      longitude: parseFloat(item.loc.coordinates[0])
-    };
-  }
-  
   if (item.coordinates && item.coordinates.coordinates && item.coordinates.coordinates.length >= 2) {
     return {
       latitude: parseFloat(item.coordinates.coordinates[1]),
       longitude: parseFloat(item.coordinates.coordinates[0])
+    };
+  }
+  
+  if (item.position && item.position.latitude && item.position.longitude) {
+    return {
+      latitude: parseFloat(item.position.latitude),
+      longitude: parseFloat(item.position.longitude)
     };
   }
   
@@ -435,40 +634,31 @@ function extractPosition(item) {
     };
   }
   
-  if (item.lat && item.lng) {
-    return {
-      latitude: parseFloat(item.lat),
-      longitude: parseFloat(item.lng)
-    };
-  }
-  
   return { latitude: 0, longitude: 0 };
 }
 
 function extractMovement(item) {
   return {
-    sog: parseFloat(item.sog || item.SpeedOverGround || item.speed || 0),
-    cog: parseFloat(item.cog || item.CourseOverGround || item.course || 0),
-    heading: parseFloat(item.hdg || item.Heading || item.heading || 0),
-    rot: parseFloat(item.rot || item.RateOfTurn || 0),
-    navStatus: parseInt(item.navstat || item.NavigationStatus || item.nav_status || 0)
+    sog: parseFloat(item.SpeedOverGround || item.sog || 0),
+    cog: parseFloat(item.CourseOverGround || item.cog || 0),
+    heading: parseFloat(item.Heading || item.heading || 0),
+    rot: parseFloat(item.RateOfTurn || item.rot || 0),
+    navStatus: parseInt(item.NavigationStatus || item.navStatus || 0)
   };
 }
 
 function extractStaticData(item) {
   return {
-    NAME: item.ShipName || item.NAME || item.name || item.vessel_name || '-',
-    TYPE: parseInt(item.ShipType || item.TYPE || item.type || item.vessel_type || 0) || null,
-    TYPENAME: item.vesseltypeDesk || item.TYPENAME || item.type_name || 'Unknown Vessel Type',
-    MMSI: item.mmsi || item.MMSI,
-    IMO: item.IMO || item.imo,
-    CALLSIGN: item.callsign || item.call_sign,
-    FLAG: item.FLAG || item.flag,
-    GT: item.GT || item.gross_tonnage,
-    DWT: item.DWT || item.deadweight,
-    LOA: item.LOA || item.length,
-    BEAM: item.BEAM || item.beam,
-    DRAUGHT: item.DRAUGHT || item.draught
+    NAME: item.ShipName || item.NAME || item.name || 'Unknown Vessel',
+    TYPE: parseInt(item.ShipType || item.TYPE || 0),
+    TYPENAME: item.vesseltypeDesk || item.TYPENAME || 'Unknown Type',
+    MMSI: item.MMSI || item.mmsi,
+    IMO: item.IMO_Number || item.IMO,
+    CALLSIGN: item.CallSign || item.callsign,
+    FLAG: item.Flag || item.FLAG,
+    LENGTH: item.Length || item.LOA,
+    WIDTH: item.Width || item.BEAM,
+    DRAUGHT: item.Draught || item.DRAUGHT
   };
 }
 
@@ -481,13 +671,7 @@ function calculateDataAge(timestamp) {
 }
 
 function classifyATON(atonData) {
-  const atonType = parseInt(
-    atonData.aid_type || 
-    atonData.aton_type || 
-    atonData.type_of_aid || 
-    atonData.navaid_type || 
-    0
-  );
+  const atonType = parseInt(atonData.AidType || atonData.aidType || 0);
   
   const atonNames = {
     1: 'North Cardinal', 2: 'East Cardinal', 3: 'South Cardinal', 4: 'West Cardinal',
@@ -514,28 +698,62 @@ function classifyATON(atonData) {
   return {
     type: atonType,
     name: atonNames[atonType] || atonNames[0],
-    category: atonCategories[atonType] || atonCategories[0],
-    color: '#FF0000',
-    symbol: '●'
+    category: atonCategories[atonType] || atonCategories[0]
   };
 }
 
 function extractATONDetails(atonData) {
   return {
-    name: atonData.name || atonData.aton_name || atonData.aid_name || 'Unknown ATON',
-    dimensions: {
-      length: parseInt(atonData.to_bow || 0) + parseInt(atonData.to_stern || 0),
-      width: parseInt(atonData.to_port || 0) + parseInt(atonData.to_starboard || 0)
-    },
-    offPosition: atonData.off_position || false,
-    virtualAton: atonData.virtual_aid || false,
-    assignedMode: atonData.assigned_mode || false,
-    raimFlag: atonData.raim || false,
-    utcSecond: atonData.second || 60
+    name: atonData.AidName || atonData.name || 'Unknown ATON',
+    offPosition: atonData.OffPosition || false,
+    virtualAid: atonData.VirtualAid || false,
+    assignedMode: atonData.AssignedMode || false,
+    length: atonData.Length || 0,
+    width: atonData.Width || 0
   };
 }
 
-// Update counters
+function autoZoomToData() {
+  try {
+    const bounds = L.latLngBounds();
+    let hasValidBounds = false;
+    
+    // Check all markers in vessels layer
+    vesselsLayer.eachLayer(function(marker) {
+      const latLng = marker.getLatLng();
+      if (latLng) {
+        bounds.extend(latLng);
+        hasValidBounds = true;
+      }
+    });
+    
+    // Check all markers in buoys layer
+    buoysLayer.eachLayer(function(marker) {
+      const latLng = marker.getLatLng();
+      if (latLng) {
+        bounds.extend(latLng);
+        hasValidBounds = true;
+      }
+    });
+    
+    if (hasValidBounds) {
+      console.log('🗺️ Auto-zooming to marker bounds');
+      map.fitBounds(bounds, { 
+        padding: [50, 50],
+        maxZoom: 12
+      });
+    } else {
+      console.log('🗺️ No markers found, zooming to Indonesia');
+      map.setView([-6.2, 106.8], 8);
+    }
+    
+  } catch (error) {
+    console.error('❌ Error auto-zooming:', error);
+    map.setView([-6.2, 106.8], 8);
+  }
+}
+
+// ===== UI CONTROL FUNCTIONS =====
 function updateCounters(vesselCount, buoyCount) {
   try {
     const vesselCountEl = document.getElementById('vessel-count');
@@ -548,7 +766,6 @@ function updateCounters(vesselCount, buoyCount) {
   }
 }
 
-// Control functions
 function updateConnectionStatus(status) {
   try {
     const statusDot = document.getElementById('connection-status');
@@ -556,22 +773,38 @@ function updateConnectionStatus(status) {
     
     if (!statusDot || !statusText) return;
     
+    connectionStatus = status;
+    
     switch(status) {
       case 'connected':
         statusDot.className = 'status-dot connected';
         statusText.textContent = 'Live AIS Data';
         break;
       case 'connecting':
-        statusDot.className = 'status-dot';
-        statusText.textContent = 'Loading...';
+        statusDot.className = 'status-dot connecting';
+        statusText.textContent = 'Connecting...';
         break;
       case 'error':
-        statusDot.className = 'status-dot';
+        statusDot.className = 'status-dot error';
         statusText.textContent = 'Connection Error';
         break;
+      default:
+        statusDot.className = 'status-dot';
+        statusText.textContent = 'Disconnected';
     }
   } catch (error) {
     console.error('❌ Error updating connection status:', error);
+  }
+}
+
+function updateLastUpdateTime() {
+  try {
+    const lastUpdateEl = document.getElementById('last-update');
+    if (lastUpdateEl) {
+      lastUpdateEl.textContent = new Date().toLocaleTimeString();
+    }
+  } catch (error) {
+    console.error('❌ Error updating last update time:', error);
   }
 }
 
@@ -604,36 +837,45 @@ function toggleFilter(type) {
         map.addLayer(tracksLayer);
         btn.classList.add('active');
       }
+    } else if (type === 'weather') {
+      if (map.hasLayer(weatherLayer)) {
+        map.removeLayer(weatherLayer);
+        btn.classList.remove('active');
+      } else {
+        map.addLayer(weatherLayer);
+        btn.classList.add('active');
+      }
     }
   } catch (error) {
     console.error('❌ Error toggling filter:', error);
   }
 }
 
-// Refresh data
 async function refreshData() {
-  const refreshBtn = document.querySelector('.refresh-btn i');
+  const refreshBtn = document.querySelector('.refresh-btn i, .action-btn i');
   
   try {
     if (refreshBtn) refreshBtn.style.animation = 'spin 1s linear infinite';
     
-    console.log('🔄 Refreshing all data...');
+    console.log('🔄 Manual refresh triggered...');
     updateConnectionStatus('connecting');
     
+    // Clear existing data
     allProcessedData.clear();
     
-    if (window.aisDataAPI) {
-      window.aisDataAPI.stopSSEConnection();
-      
-      setTimeout(async () => {
-        window.aisDataAPI.startSSEConnection();
-        await fetchAllPaginationData();
-      }, 1000);
-    }
+    // Fetch fresh data
+    await fetchAllData();
+    await fetchWeatherData();
+    
+    console.log('✅ Manual refresh completed');
+    
+    // Show success toast
+    showToast('Data refreshed successfully', 'success');
     
   } catch (error) {
     console.error('❌ Refresh failed:', error);
     updateConnectionStatus('error');
+    showToast('Refresh failed: ' + error.message, 'error');
   }
   
   setTimeout(() => {
@@ -641,24 +883,181 @@ async function refreshData() {
   }, 2000);
 }
 
-// CSS untuk marker
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+// ===== DETAIL FUNCTIONS =====
+function showVesselDetails(vessel) {
+  try {
+    const infoPanel = document.getElementById('info-panel');
+    const infoContent = document.getElementById('info-content');
+    
+    if (!infoPanel || !infoContent) return;
+    
+    // Show panel
+    infoPanel.classList.add('active');
+    
+    // Create detailed content
+    const detailContent = MarkerManager.createVesselPopup(vessel);
+    infoContent.innerHTML = detailContent;
+    
+    console.log('🚢 Showing vessel details:', vessel);
+  } catch (error) {
+    console.error('❌ Error showing vessel details:', error);
   }
-`;
-document.head.appendChild(style);
+}
 
-// Initialize
+function showATONDetails(aton) {
+  try {
+    const infoPanel = document.getElementById('info-panel');
+    const infoContent = document.getElementById('info-content');
+    
+    if (!infoPanel || !infoContent) return;
+    
+    // Show panel
+    infoPanel.classList.add('active');
+    
+    // Create detailed content
+    const detailContent = MarkerManager.createATONPopup(aton);
+    infoContent.innerHTML = detailContent;
+    
+    console.log('🚨 Showing ATON details:', aton);
+  } catch (error) {
+    console.error('❌ Error showing ATON details:', error);
+  }
+}
+
+// ===== AREA SEARCH =====
+async function searchByArea() {
+  try {
+    const bounds = map.getBounds();
+    const boundsObj = {
+      north: bounds.getNorth(),
+      south: bounds.getSouth(),
+      east: bounds.getEast(),
+      west: bounds.getWest()
+    };
+    
+    console.log('🔍 Searching by area:', boundsObj);
+    updateConnectionStatus('connecting');
+    
+    const areaData = await apiClient.getAllDataByArea(boundsObj);
+    
+    if (areaData && areaData.data) {
+      // Clear current data
+      allProcessedData.clear();
+      MarkerManager.clearAllMarkers();
+      
+      // Process area data
+      processPageData(areaData.data);
+      
+      // Update map
+      updateMapWithAllData();
+      
+      updateConnectionStatus('connected');
+      showToast(`Area search completed: ${areaData.data.length} items found`, 'success');
+      
+      console.log(`✅ Area search completed: ${areaData.data.length} items found`);
+    } else {
+      showToast('No data found in current area', 'warning');
+    }
+    
+  } catch (error) {
+    console.error('❌ Area search failed:', error);
+    updateConnectionStatus('error');
+    showToast('Area search failed: ' + error.message, 'error');
+  }
+}
+
+// ===== TOAST NOTIFICATION SYSTEM =====
+function showToast(message, type = 'info') {
+  try {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    
+    const icon = type === 'success' ? 'check-circle' : 
+                 type === 'error' ? 'exclamation-circle' : 
+                 type === 'warning' ? 'exclamation-triangle' : 'info-circle';
+    
+    toast.innerHTML = `
+      <i class="fas fa-${icon}"></i>
+      <span>${message}</span>
+      <button onclick="this.parentElement.remove()">×</button>
+    `;
+    
+    container.appendChild(toast);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+      if (toast.parentElement) {
+        toast.remove();
+      }
+    }, 5000);
+  } catch (error) {
+    console.error('❌ Error showing toast:', error);
+  }
+}
+
+// ===== KEYBOARD SHORTCUTS =====
+document.addEventListener('keydown', function(e) {
+  if (e.ctrlKey || e.metaKey) {
+    switch(e.key) {
+      case 'r':
+        e.preventDefault();
+        refreshData();
+        break;
+      case 'f':
+        e.preventDefault();
+        if (typeof toggleFullscreen === 'function') {
+          toggleFullscreen();
+        }
+        break;
+      case 'l':
+        e.preventDefault();
+        if (typeof openLegend === 'function') {
+          openLegend();
+        }
+        break;
+      case 's':
+        e.preventDefault();
+        searchByArea();
+        break;
+    }
+  }
+});
+
+// ===== INITIALIZATION =====
 document.addEventListener('DOMContentLoaded', initMap);
 
-// Export untuk debugging
+// ===== CLEANUP ON PAGE UNLOAD =====
+window.addEventListener('beforeunload', () => {
+  stopAutoRefresh();
+  if (apiClient.abortController) {
+    apiClient.abortController.abort();
+  }
+});
+
+// ===== EXPORT FOR DEBUGGING =====
 window.debugAIS = {
   getAllData: () => allProcessedData,
   getDataCount: () => allProcessedData.size,
   refreshMap: () => updateMapWithAllData(),
-  fetchPagination: () => fetchAllPaginationData(),
-  getAssetConfig: () => MARKER_ASSETS
+  fetchData: () => fetchAllData(),
+  getAssetConfig: () => MARKER_ASSETS,
+  getAPIClient: () => apiClient,
+  getConnectionStatus: () => connectionStatus,
+  testConnection: () => testAPIConnection(),
+  searchArea: () => searchByArea(),
+  getWeatherData: () => weatherData,
+  getMarkerCounts: () => MarkerManager.getMarkerCounts(),
+  highlightMarker: (mmsi, isVessel) => MarkerManager.highlightMarker(mmsi, isVessel),
+  clearMarkers: () => MarkerManager.clearAllMarkers()
 };
+
+// ===== GLOBAL FUNCTIONS FOR HTML =====
+window.toggleFilter = toggleFilter;
+window.refreshData = refreshData;
+window.searchByArea = searchByArea;
+window.showVesselDetails = showVesselDetails;
+window.showATONDetails = showATONDetails;
+window.showToast = showToast;

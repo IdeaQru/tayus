@@ -3,147 +3,502 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Panduan Simbol AIS & Buoy</title>
-
-  <!-- Font-Awesome untuk ikon kecil -->
-  <link rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0;font-family:Segoe UI,Arial,sans-serif}
-    body{background:#eef2f7;padding:20px}
-    .box{max-width:1100px;margin:auto;background:#fff;border-radius:12px;
-         box-shadow:0 4px 20px rgba(0,0,0,.1);overflow:hidden}
-    header{background:#0066cc;color:#fff;padding:25px;text-align:center;position:relative}
-    header a{position:absolute;left:20px;top:50%;transform:translateY(-50%);
-            background:rgba(255,255,255,.15);padding:8px 14px;border-radius:5px;color:#fff;
-            text-decoration:none;font-size:14px}
-    h1{font-size:26px;margin-bottom:6px}
-    main{padding:30px}
-    h2{font-size:20px;color:#0066cc;margin:25px 0 15px}
-    .grid{display:grid;gap:18px}
-    .grid-2{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
-    .item{display:flex;gap:14px;align-items:center;background:#fafafa;padding:10px 14px;
-          border-radius:8px;border:1px solid #e2e6ed}
-    .item img{width:40px;height:40px;object-fit:contain}
-    .item .txt{font-size:14px;line-height:1.3;color:#333}
-    .code{background:#e9ecef;font-size:11px;padding:2px 4px;border-radius:4px;margin-left:4px}
-    /* Vessel status */
-    .status{display:flex;gap:10px;flex-wrap:wrap}
-    .dot{width:12px;height:12px;border-radius:50%;border:1px solid #000;margin-right:6px}
-  </style>
+  <title>AIS Maritime Legend - Panduan Simbol Navigasi</title>
+  
+  <!-- External Resources -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="legend.css">
 </head>
 <body>
 
-<div class="box">
-  <header>
-    <a href="maps.html"><i class="fas fa-arrow-left"></i> Kembali</a>
-    <h1>Panduan Simbol AIS & Buoy</h1>
-    <p>Referensi cepat untuk semua ikon pada peta</p>
+<div class="legend-container">
+  <!-- Header Section -->
+  <header class="legend-header">
+    <div class="header-background">
+      <div class="wave-animation"></div>
+    </div>
+    <div class="header-content">
+      <a href="maps.html" class="back-button">
+        <i class="fas fa-arrow-left"></i>
+        <span>Kembali ke Peta</span>
+      </a>
+      <div class="title-section">
+        <h1><i class="fas fa-anchor"></i> AIS Maritime Legend</h1>
+        <p class="subtitle">Panduan Lengkap Simbol Navigasi & Identifikasi Kapal</p>
+        <div class="header-stats">
+          <div class="stat-item">
+            <span class="stat-number">31</span>
+            <span class="stat-label">ATON Types</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">15</span>
+            <span class="stat-label">Nav Status</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-number">∞</span>
+            <span class="stat-label">Vessels</span>
+          </div>
+        </div>
+      </div>
+    </div>
   </header>
 
-  <main>
+  <!-- Main Content -->
+  <main class="legend-main">
+    
+    <!-- Quick Navigation -->
+    <nav class="quick-nav">
+      <div class="nav-container">
+        <a href="#vessels" class="nav-item active">
+          <i class="fas fa-ship"></i>
+          <span>Vessels</span>
+        </a>
+        <a href="#cardinal" class="nav-item">
+          <i class="fas fa-compass"></i>
+          <span>Cardinal</span>
+        </a>
+        <a href="#lateral" class="nav-item">
+          <i class="fas fa-route"></i>
+          <span>Lateral</span>
+        </a>
+        <a href="#special" class="nav-item">
+          <i class="fas fa-star"></i>
+          <span>Special</span>
+        </a>
+        <a href="#structures" class="nav-item">
+          <i class="fas fa-building"></i>
+          <span>Structures</span>
+        </a>
+      </div>
+    </nav>
 
-    <!-- VESSEL SYMBOLS --------------------------------------------------- -->
-    <h2><i class="fas fa-ship"></i> Kapal (Vessel)</h2>
-    <div class="item">
-      <img src="assets/marker/ships.png" alt="Ship icon">
-      <div class="txt">
-        Semua tipe kapal digambarkan sebagai segitiga biru yang berputar sesuai heading-nya.<br>
-        <small>Warna garis luar berubah mengikuti *Navigation Status*.</small>
+    <!-- Vessel Section -->
+    <section id="vessels" class="legend-section">
+      <div class="section-header">
+        <h2><i class="fas fa-ship"></i> Kapal (Vessels)</h2>
+        <p class="section-description">Semua jenis kapal menggunakan ikon yang sama dengan rotasi berdasarkan heading atau COG</p>
       </div>
-    </div>
+      
+      <div class="vessel-showcase">
+        <div class="vessel-demo">
+          <div class="vessel-icon-demo">
+            <img src="assets/marker/ships.png" alt="Ship Icon" class="rotating-ship">
+            <div class="bearing-indicator"></div>
+          </div>
+          <div class="vessel-info">
+            <h3>Icon Kapal Universal</h3>
+            <p>Berputar sesuai <strong>Heading</strong> atau <strong>COG</strong></p>
+            <div class="vessel-features">
+              <span class="feature"><i class="fas fa-sync-alt"></i> Real-time Rotation</span>
+              <span class="feature"><i class="fas fa-tachometer-alt"></i> Speed Indicator</span>
+              <span class="feature"><i class="fas fa-info-circle"></i> Status Colors</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-    <h3 style="margin-top:20px;font-size:16px">Navigation Status</h3>
-    <div class="status">
-      <div class="item" style="padding:6px 10px">
-        <span class="dot" style="background:#00ff00"></span>Under way
+      <!-- Navigation Status -->
+      <div class="status-grid">
+        <h3 class="subsection-title">Navigation Status Indicators</h3>
+        <div class="status-items">
+          <div class="status-item underway">
+            <div class="status-indicator"></div>
+            <div class="status-info">
+              <span class="status-name">Under way using engine</span>
+              <span class="status-code">Code: 0</span>
+            </div>
+          </div>
+          <div class="status-item anchored">
+            <div class="status-indicator"></div>
+            <div class="status-info">
+              <span class="status-name">At anchor</span>
+              <span class="status-code">Code: 1</span>
+            </div>
+          </div>
+          <div class="status-item not-under-command">
+            <div class="status-indicator"></div>
+            <div class="status-info">
+              <span class="status-name">Not under command</span>
+              <span class="status-code">Code: 2</span>
+            </div>
+          </div>
+          <div class="status-item restricted">
+            <div class="status-indicator"></div>
+            <div class="status-info">
+              <span class="status-name">Restricted manoeuvrability</span>
+              <span class="status-code">Code: 3</span>
+            </div>
+          </div>
+          <div class="status-item moored">
+            <div class="status-indicator"></div>
+            <div class="status-info">
+              <span class="status-name">Moored</span>
+              <span class="status-code">Code: 5</span>
+            </div>
+          </div>
+          <div class="status-item fishing">
+            <div class="status-indicator"></div>
+            <div class="status-info">
+              <span class="status-name">Engaged in fishing</span>
+              <span class="status-code">Code: 7</span>
+            </div>
+          </div>
+          <div class="status-item sailing">
+            <div class="status-indicator"></div>
+            <div class="status-info">
+              <span class="status-name">Under way sailing</span>
+              <span class="status-code">Code: 8</span>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="item" style="padding:6px 10px">
-        <span class="dot" style="background:#ff0000"></span>At anchor / Moored
-      </div>
-      <div class="item" style="padding:6px 10px">
-        <span class="dot" style="background:#ffff00"></span>Not under command
-      </div>
-      <div class="item" style="padding:6px 10px">
-        <span class="dot" style="background:#00ccff"></span>Fishing / Sailing
-      </div>
-    </div>
+    </section>
 
-    <!-- CARDINAL MARKS --------------------------------------------------- -->
-    <h2><i class="fas fa-compass"></i> Cardinal Marks</h2>
-    <div class="grid grid-2">
-      <div class="item">
-        <img src="assets/marker/north-cardinal.png" alt="North Cardinal">
-        <div class="txt">North Cardinal<span class="code">1</span></div>
+    <!-- Cardinal Marks Section -->
+    <section id="cardinal" class="legend-section">
+      <div class="section-header">
+        <h2><i class="fas fa-compass"></i> Cardinal Marks</h2>
+        <p class="section-description">Penanda kardinal menunjukkan arah aman untuk navigasi berdasarkan kompas</p>
       </div>
-      <div class="item">
-        <img src="assets/marker/east-cardinal.png" alt="East Cardinal">
-        <div class="txt">East Cardinal<span class="code">2</span></div>
+      
+      <div class="cardinal-compass">
+        <div class="compass-container">
+          <div class="compass-rose">
+            <div class="cardinal-item north" data-type="1">
+              <img src="assets/marker/north-cardinal.png" alt="North Cardinal">
+              <span class="cardinal-label">N</span>
+            </div>
+            <div class="cardinal-item east" data-type="2">
+              <img src="assets/marker/east-cardinal.png" alt="East Cardinal">
+              <span class="cardinal-label">E</span>
+            </div>
+            <div class="cardinal-item south" data-type="3">
+              <img src="assets/marker/south-cardinal.png" alt="South Cardinal">
+              <span class="cardinal-label">S</span>
+            </div>
+            <div class="cardinal-item west" data-type="4">
+              <img src="assets/marker/west-cardinal.png" alt="West Cardinal">
+              <span class="cardinal-label">W</span>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="item">
-        <img src="assets/marker/south-cardinal.png" alt="South Cardinal">
-        <div class="txt">South Cardinal<span class="code">3</span></div>
-      </div>
-      <div class="item">
-        <img src="assets/marker/west-cardinal.png" alt="West Cardinal">
-        <div class="txt">West Cardinal<span class="code">4</span></div>
-      </div>
-    </div>
 
-    <!-- LATERAL MARKS ----------------------------------------------------- -->
-    <h2><i class="fas fa-route"></i> Lateral Marks</h2>
-    <div class="grid grid-2">
-      <div class="item">
-        <img src="assets/marker/porthand.png" alt="Port Hand">
-        <div class="txt">Port Hand<span class="code">5</span></div>
+      <div class="aton-grid">
+        <div class="aton-item" data-code="1">
+          <img src="assets/marker/north-cardinal.png" alt="North Cardinal">
+          <div class="aton-info">
+            <h4>North Cardinal</h4>
+            <span class="aton-code">Type: 1</span>
+            <p>Aman di sebelah utara penanda</p>
+          </div>
+        </div>
+        <div class="aton-item" data-code="2">
+          <img src="assets/marker/east-cardinal.png" alt="East Cardinal">
+          <div class="aton-info">
+            <h4>East Cardinal</h4>
+            <span class="aton-code">Type: 2</span>
+            <p>Aman di sebelah timur penanda</p>
+          </div>
+        </div>
+        <div class="aton-item" data-code="3">
+          <img src="assets/marker/south-cardinal.png" alt="South Cardinal">
+          <div class="aton-info">
+            <h4>South Cardinal</h4>
+            <span class="aton-code">Type: 3</span>
+            <p>Aman di sebelah selatan penanda</p>
+          </div>
+        </div>
+        <div class="aton-item" data-code="4">
+          <img src="assets/marker/west-cardinal.png" alt="West Cardinal">
+          <div class="aton-info">
+            <h4>West Cardinal</h4>
+            <span class="aton-code">Type: 4</span>
+            <p>Aman di sebelah barat penanda</p>
+          </div>
+        </div>
       </div>
-      <div class="item">
-        <img src="assets/marker/starboard-hand.png" alt="Starboard Hand">
-        <div class="txt">Starboard Hand<span class="code">6</span></div>
-      </div>
-    </div>
+    </section>
 
-    <!-- SAFE WATER, SPECIAL, ISOLATED ------------------------------------ -->
-    <h2><i class="fas fa-water"></i> Safe Water & Special Marks</h2>
-    <div class="grid grid-2">
-      <div class="item">
-        <img src="assets/marker/safe-water.png" alt="Safe Water">
-        <div class="txt">Safe Water<span class="code">10</span></div>
+    <!-- Lateral Marks Section -->
+    <section id="lateral" class="legend-section">
+      <div class="section-header">
+        <h2><i class="fas fa-route"></i> Lateral Marks</h2>
+        <p class="section-description">Penanda lateral menunjukkan sisi kiri dan kanan jalur pelayaran</p>
       </div>
-      <div class="item">
-        <img src="assets/marker/special-mark.png" alt="Special Mark">
-        <div class="txt">Special Purpose<span class="code">11</span></div>
+      
+      <div class="lateral-demo">
+        <div class="channel-illustration">
+          <div class="channel-line"></div>
+          <div class="port-side">
+            <img src="assets/marker/portland.png" alt="Port Hand">
+            <span class="side-label">Port (Kiri)</span>
+          </div>
+          <div class="starboard-side">
+            <img src="assets/marker/starboard-hand.png" alt="Starboard Hand">
+            <span class="side-label">Starboard (Kanan)</span>
+          </div>
+          <div class="direction-arrow">
+            <i class="fas fa-arrow-up"></i>
+            <span>Arah Pelayaran</span>
+          </div>
+        </div>
       </div>
-      <div class="item">
-        <img src="assets/marker/isolated.png" alt="Isolated Danger">
-        <div class="txt">Isolated Danger<span class="code">9</span></div>
-      </div>
-    </div>
 
-    <!-- EMERGENCY / VIRTUAL / STRUCTURES --------------------------------- -->
-    <h2><i class="fas fa-exclamation-triangle"></i> Lain-lain</h2>
-    <div class="grid grid-2">
-      <div class="item">
-        <img src="assets/marker/emergency.png" alt="Emergency Wreck">
-        <div class="txt">Emergency Wreck<span class="code">17</span></div>
+      <div class="aton-grid">
+        <div class="aton-item" data-code="5">
+          <img src="assets/marker/portland.png" alt="Port Hand">
+          <div class="aton-info">
+            <h4>Port Hand</h4>
+            <span class="aton-code">Type: 5</span>
+            <p>Sisi kiri saat memasuki pelabuhan</p>
+          </div>
+        </div>
+        <div class="aton-item" data-code="6">
+          <img src="assets/marker/starboard-hand.png" alt="Starboard Hand">
+          <div class="aton-info">
+            <h4>Starboard Hand</h4>
+            <span class="aton-code">Type: 6</span>
+            <p>Sisi kanan saat memasuki pelabuhan</p>
+          </div>
+        </div>
+        <div class="aton-item" data-code="7">
+          <img src="assets/marker/portland.png" alt="Preferred Channel Port">
+          <div class="aton-info">
+            <h4>Preferred Channel Port</h4>
+            <span class="aton-code">Type: 7</span>
+            <p>Jalur utama di sisi port</p>
+          </div>
+        </div>
+        <div class="aton-item" data-code="8">
+          <img src="assets/marker/starboard-hand.png" alt="Preferred Channel Starboard">
+          <div class="aton-info">
+            <h4>Preferred Channel Starboard</h4>
+            <span class="aton-code">Type: 8</span>
+            <p>Jalur utama di sisi starboard</p>
+          </div>
+        </div>
       </div>
-      <div class="item">
-        <img src="assets/marker/virtual.png" alt="Virtual ATON">
-        <div class="txt">Virtual ATON<span class="code">20</span></div>
+    </section>
+
+    <!-- Special Marks Section -->
+    <section id="special" class="legend-section">
+      <div class="section-header">
+        <h2><i class="fas fa-star"></i> Special & Safety Marks</h2>
+        <p class="section-description">Penanda khusus untuk keselamatan dan tujuan navigasi tertentu</p>
       </div>
-      <div class="item">
-        <img src="assets/marker/fixed.png" alt="Fixed Structure">
-        <div class="txt">Fixed Structure<span class="code">15</span></div>
+      
+      <div class="aton-grid">
+        <div class="aton-item featured" data-code="9">
+          <img src="assets/marker/special-mark.png" alt="Isolated Danger">
+          <div class="aton-info">
+            <h4>Isolated Danger</h4>
+            <span class="aton-code">Type: 9</span>
+            <p>Bahaya terisolasi dengan air aman di sekitarnya</p>
+          </div>
+        </div>
+        <div class="aton-item featured" data-code="10">
+          <img src="assets/marker/safe-water.png" alt="Safe Water">
+          <div class="aton-info">
+            <h4>Safe Water</h4>
+            <span class="aton-code">Type: 10</span>
+            <p>Air aman di semua sisi penanda</p>
+          </div>
+        </div>
+        <div class="aton-item" data-code="11">
+          <img src="assets/marker/special-mark.png" alt="Special Mark">
+          <div class="aton-info">
+            <h4>Special Mark</h4>
+            <span class="aton-code">Type: 11</span>
+            <p>Penanda untuk tujuan khusus</p>
+          </div>
+        </div>
+        <div class="aton-item" data-code="12">
+          <img src="assets/marker/special-mark.png" alt="Light Vessel">
+          <div class="aton-info">
+            <h4>Light Vessel</h4>
+            <span class="aton-code">Type: 12</span>
+            <p>Kapal mercusuar</p>
+          </div>
+        </div>
+        <div class="aton-item" data-code="13">
+          <img src="assets/marker/special-mark.png" alt="LANBY">
+          <div class="aton-info">
+            <h4>LANBY</h4>
+            <span class="aton-code">Type: 13</span>
+            <p>Large Automatic Navigation Buoy</p>
+          </div>
+        </div>
+        <div class="aton-item" data-code="14">
+          <img src="assets/marker/special-mark.png" alt="Racon">
+          <div class="aton-info">
+            <h4>Racon</h4>
+            <span class="aton-code">Type: 14</span>
+            <p>Radar Transponder Beacon</p>
+          </div>
+        </div>
+        <div class="aton-item virtual" data-code="20">
+          <img src="assets/marker/virtual_buoy.png" alt="Virtual ATON">
+          <div class="aton-info">
+            <h4>Virtual ATON</h4>
+            <span class="aton-code">Type: 20</span>
+            <p>Penanda navigasi virtual</p>
+          </div>
+        </div>
       </div>
-      <div class="item">
-        <img src="assets/marker/floating.png" alt="Floating Structure">
-        <div class="txt">Floating Structure<span class="code">16</span></div>
+    </section>
+
+    <!-- Structures Section -->
+    <section id="structures" class="legend-section">
+      <div class="section-header">
+        <h2><i class="fas fa-building"></i> Structures & Installations</h2>
+        <p class="section-description">Struktur tetap dan instalasi lepas pantai</p>
       </div>
-    </div>
+      
+      <div class="aton-grid">
+        <div class="aton-item" data-code="15">
+          <img src="assets/marker/special-mark.png" alt="Fixed Structure">
+          <div class="aton-info">
+            <h4>Fixed Structure</h4>
+            <span class="aton-code">Type: 15</span>
+            <p>Struktur tetap di laut</p>
+          </div>
+        </div>
+        <div class="aton-item" data-code="16">
+          <img src="assets/marker/special-mark.png" alt="Floating Structure">
+          <div class="aton-info">
+            <h4>Floating Structure</h4>
+            <span class="aton-code">Type: 16</span>
+            <p>Struktur mengapung</p>
+          </div>
+        </div>
+        <div class="aton-item" data-code="17">
+          <img src="assets/marker/special-mark.png" alt="Emergency Wreck">
+          <div class="aton-info">
+            <h4>Emergency Wreck</h4>
+            <span class="aton-code">Type: 17</span>
+            <p>Penanda bangkai kapal darurat</p>
+          </div>
+        </div>
+        <div class="aton-item" data-code="18">
+          <img src="assets/marker/special-mark.png" alt="Offshore Platform">
+          <div class="aton-info">
+            <h4>Offshore Platform</h4>
+            <span class="aton-code">Type: 18</span>
+            <p>Platform lepas pantai</p>
+          </div>
+        </div>
+        <div class="aton-item" data-code="19">
+          <img src="assets/marker/special-mark.png" alt="Drilling Rig">
+          <div class="aton-info">
+            <h4>Drilling Rig</h4>
+            <span class="aton-code">Type: 19</span>
+            <p>Rig pengeboran</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Additional Info Section -->
+    <section class="info-section">
+      <div class="info-grid">
+        <div class="info-card">
+          <i class="fas fa-info-circle"></i>
+          <h3>Message Type 21</h3>
+          <p>Semua ATON menggunakan AIS Message Type 21 (Aid-to-Navigation Report) untuk transmisi data real-time</p>
+        </div>
+        <div class="info-card">
+          <i class="fas fa-clock"></i>
+          <h3>Real-time Updates</h3>
+          <p>Data diperbarui setiap 30 detik dengan automatic cleanup untuk data yang lebih dari 10 menit</p>
+        </div>
+        <div class="info-card">
+          <i class="fas fa-map-marker-alt"></i>
+          <h3>Positioning</h3>
+          <p>Semua marker menggunakan koordinat GPS dengan akurasi tinggi untuk navigasi yang aman</p>
+        </div>
+      </div>
+    </section>
 
   </main>
+
+  <!-- Footer -->
+  <footer class="legend-footer">
+    <div class="footer-content">
+      <div class="footer-info">
+        <h4>AIS Maritime System</h4>
+        <p>Real-time vessel tracking and navigation aid monitoring</p>
+      </div>
+      <div class="footer-links">
+        <a href="maps.html">Kembali ke Peta</a>
+        <a href="#top">Ke Atas</a>
+      </div>
+    </div>
+  </footer>
+
 </div>
+
+<!-- JavaScript for Interactive Features -->
+<script>
+// Smooth scrolling for navigation
+document.querySelectorAll('.nav-item').forEach(item => {
+  item.addEventListener('click', function(e) {
+    e.preventDefault();
+    const target = document.querySelector(this.getAttribute('href'));
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth' });
+      
+      // Update active nav item
+      document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+      this.classList.add('active');
+    }
+  });
+});
+
+// Rotating ship animation
+const rotatingShip = document.querySelector('.rotating-ship');
+if (rotatingShip) {
+  let rotation = 0;
+  setInterval(() => {
+    rotation += 2;
+    rotatingShip.style.transform = `rotate(${rotation}deg)`;
+  }, 100);
+}
+
+// ATON item hover effects
+document.querySelectorAll('.aton-item').forEach(item => {
+  item.addEventListener('mouseenter', function() {
+    this.style.transform = 'translateY(-5px)';
+  });
+  
+  item.addEventListener('mouseleave', function() {
+    this.style.transform = 'translateY(0)';
+  });
+});
+
+// Intersection Observer for scroll animations
+const observerOptions = {
+  threshold: 0.1,
+  rootMargin: '0px 0px -50px 0px'
+};
+
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('animate-in');
+    }
+  });
+}, observerOptions);
+
+document.querySelectorAll('.legend-section').forEach(section => {
+  observer.observe(section);
+});
+</script>
 
 </body>
 </html>
