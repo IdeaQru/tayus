@@ -80,7 +80,7 @@ class PopupManager {
 
   // Buat popup untuk ATON
   static createATONPopup(aton) {
-    const name = aton.atonName || 'Unknown ATON';
+    const name = aton.atonDetails?.name || aton.atonName || 'Unknown ATON';
     const mmsi = aton.mmsi || 'N/A';
     const category = aton.atonCategory || 'Unknown';
     const typeCode = aton.atonType || 0;
@@ -267,7 +267,7 @@ class PopupManager {
       
       if (!panel || !content) return;
       
-      const name = aton.atonDetails?.name || 'Unknown ATON';
+      const name = aton.atonDetails.name || 'Unknown ATON';
       const mmsi = aton.mmsi || 'N/A';
       const atonName = aton.atonName || 'Unknown';
       const category = aton.atonCategory || 'Unknown';

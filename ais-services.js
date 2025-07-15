@@ -278,7 +278,7 @@ class AISTelnetClient extends EventEmitter {
           coordinates: [decoded.lon, decoded.lat]
         };
         data.AidType = decoded.aid_type || decoded.aidtype || 0;
-        data.AidName = decoded.name || "Unknown Aid";
+        data.AidName = decoded.shipname || "Unknown Aid";
         data.Length = (decoded.dimA || 0) + (decoded.dimB || 0) || decoded.length;
         data.Width = (decoded.dimC || 0) + (decoded.dimD || 0) || decoded.width;
         data.TypeOfEPFD = decoded.epfd || 0;

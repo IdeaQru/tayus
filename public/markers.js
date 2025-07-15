@@ -117,7 +117,7 @@ class MarkerManager {
             <img src="${iconUrl}" class="aton-icon-img" alt="ATON ${aton.mmsi || aton.MMSI}" />
           </div>
           <div class="aton-info">
-            <span class="aton-name">${aton.atonName || aton.AidName || 'Unknown ATON'}</span>
+            <span class="aton-name">${ aton.atonDetails.AidName || 'Unknown ATON'}</span>
             <span class="aton-type">${this.getATONTypeName(atonType)}</span>
           </div>
         `,
@@ -392,7 +392,8 @@ class MarkerManager {
 
   static createATONPopup(aton) {
     const mmsi = aton.mmsi || aton.MMSI;
-    const name = aton.atonName || aton.AidName || 'Unknown ATON';
+    const name = aton.atonDetails.name || aton.ShipName || aton.atonName ;
+    console.log(`Creating ATON popup for name: ${name}`);
     const type = aton.atonType || aton.AidType || 0;
     const category = aton.atonCategory || this.getATONTypeName(type);
     const lat = aton.position?.latitude || aton.coordinates?.coordinates[1] || 0;
