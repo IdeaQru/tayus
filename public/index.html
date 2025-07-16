@@ -70,7 +70,7 @@
         </div>
       </div>
 
-      <!-- Card Maps Baru -->
+      <!-- Card Maps -->
       <div class="card map-card" onclick="openMaps()">
         <div class="card-icon">
           <i class="fas fa-map-marked-alt"></i>
@@ -79,6 +79,30 @@
           <h2>Peta Cuaca</h2>
           <p class="card-value">Lihat Lokasi</p>
           <p class="card-unit">Interactive Map</p>
+        </div>
+      </div>
+
+      <!-- Card Download CSV -->
+      <div class="card download-card" onclick="downloadCSV()">
+        <div class="card-icon">
+          <i class="fas fa-download"></i>
+        </div>
+        <div class="card-content">
+          <h2>Download Data</h2>
+          <p class="card-value">Unduh CSV</p>
+          <p class="card-unit">Export Data</p>
+        </div>
+      </div>
+
+      <!-- Card Status Log -->
+      <div class="card status-card">
+        <div class="card-icon">
+          <i class="fas fa-database"></i>
+        </div>
+        <div class="card-content">
+          <h2>Data Log</h2>
+          <p id="log-count" class="card-value">0</p>
+          <p class="card-unit">Records</p>
         </div>
       </div>
     </div>
